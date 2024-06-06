@@ -100,7 +100,7 @@ func DeleteUser(context *gin.Context) {
 		return
 	}
 	if err != nil {
-		log.Println("Не удалось удалить пользователя")
+		log.Println("Не удалось получить пользователя")
 	}
 
 	db.DB.Delete(&user)

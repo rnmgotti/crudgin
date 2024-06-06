@@ -3,7 +3,9 @@ package user
 import (
 	"crudgin/pkg/db"
 	"crudgin/pkg/utils/jwttoken"
+	"log"
 	"net/http"
+
 	"github.com/gin-gonic/gin"
 )
 
@@ -52,7 +54,11 @@ func Login(c *gin.Context) {
 // список пользователей
 func GetAllUsers(context *gin.Context) {
 	var users []Users
+	var err error
 	db.DB.Find(&users)
+	if err != nil {
+		log.Println("Не удалось получить список пользователей")
+	}
 
 	context.JSON(http.StatusOK, gin.H{"users": users})
 }
@@ -60,9 +66,13 @@ func GetAllUsers(context *gin.Context) {
 // получение одного пользователя
 func GetUsers(context *gin.Context) {
 	var user Users
-	if err := db.DB.Where("id=?", context.Param("id")).First(&user).Error; err != nil {
+	var err error
+	if err = db.DB.Where("id=?", context.Param("id")).First(&user).Error; err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"error": "пользователя не существует"})
 		return
+	}
+	if err != nil {
+		log.Println("Не удалось получить пользователя")
 	}
 	context.JSON(http.StatusOK, gin.H{"products": user})
 }
@@ -70,9 +80,13 @@ func GetUsers(context *gin.Context) {
 // обновление пользователя
 func UpdateUser(context *gin.Context) {
 	var user Users
-	if err := db.DB.Where("id=?", context.Param("id")).First(&user).Error; err != nil {
+	var err error
+	if err = db.DB.Where("id=?", context.Param("id")).First(&user).Error; err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"error": "пользователя не существует"})
 		return
+	}
+	if err != nil {
+		log.Println("Не удалось обновить пользователя")
 	}
 	context.JSON(http.StatusOK, gin.H{"user": user})
 }
@@ -80,9 +94,13 @@ func UpdateUser(context *gin.Context) {
 // удаление пользователя
 func DeleteUser(context *gin.Context) {
 	var user Users
-	if err := db.DB.Where("id=?", context.Param("id")).First(&user).Error; err != nil {
+	var err error
+	if err = db.DB.Where("id=?", context.Param("id")).First(&user).Error; err != nil {
 		context.JSON(http.StatusBadRequest, gin.H{"error": "пользователя не существует"})
 		return
+	}
+	if err != nil {
+		log.Println("Не удалось удалить пользователя")
 	}
 
 	db.DB.Delete(&user)

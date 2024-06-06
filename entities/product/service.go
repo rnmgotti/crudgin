@@ -2,66 +2,75 @@ package product
 
 import (
 	"crudgin/pkg/db"
+	"log"
 	"net/http"
 
 	"github.com/gin-gonic/gin"
 )
 
-func GetAllProducts(context *gin.Context) {
+var Err error
+
+func GetAllProducts(c *gin.Context) {
 	var products []Products
+	var err error
 	db.DB.Find(&products)
+	if err != nil {
+		log.Println("Не удалось получить список продуктов")
+	}
 
-	context.JSON(http.StatusOK, gin.H{"products": products})
+	c.JSON(http.StatusOK, gin.H{"products": products})
 }
 
-func GetProducts(context *gin.Context) {
+func GetProducts(c *gin.Context) {
 
 	var product Products
-	if err := db.DB.Where("id=?", context.Param("id")).First(&product).Error; err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": "Запись не существует"})
+	var err error
+	if err := db.DB.Where("id=?", c.Param("id")).First(&product).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Запись не существует"})
 		return
 	}
-	context.JSON(http.StatusOK, gin.H{"products": product})
-}
-
-func CreateProducts(context *gin.Context) {
-	var input CreateProductsInput
-	if err := context.ShouldBindJSON(&input); err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+	if err != nil {
+		log.Println("Не удалось получить продукт")
 	}
-
-	product := Products{Name: input.Name, Price: input.Price}
-	db.DB.Create(&product)
-
-	context.JSON(http.StatusOK, gin.H{"products": product})
+	c.JSON(http.StatusOK, gin.H{"products": product})
 }
 
-func UpdateProduct(context *gin.Context) {
+func UpdateProduct(c *gin.Context) {
 	var product Products
-	if err := db.DB.Where("id=?", context.Param("id")).First(&product).Error; err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": "Запись не существует"})
+	var err error
+	if err := db.DB.Where("id=?", c.Param("id")).First(&product).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Запись не существует"})
 		return
 	}
-	var input UpdateProductsInput
-	if err := context.ShouldBindJSON(&input); err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+	if err != nil {
+		log.Println("такого продукта нет")
+	}
+	var input Products
+	if err := c.ShouldBindJSON(&input); err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
+	}
+	if err != nil {
+		log.Println("Не удалось обновить продукт")
 	}
 
 	db.DB.Model(&product).Update(input)
 
-	context.JSON(http.StatusOK, gin.H{"products": product})
+	c.JSON(http.StatusOK, gin.H{"products": product})
 }
 
-func DeleteTrack(context *gin.Context) {
+func DeleteTrack(c *gin.Context) {
 	var product Products
-	if err := db.DB.Where("id = ?", context.Param("id")).First(&product).Error; err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": "Запись не существует"})
+	var err error
+	if err := db.DB.Where("id = ?", c.Param("id")).First(&product).Error; err != nil {
+		c.JSON(http.StatusBadRequest, gin.H{"error": "Запись не существует"})
 		return
+	}
+	if err != nil {
+		log.Println("Не удалось удалить продукт")
 	}
 
 	db.DB.Delete(&product)
 
-	context.JSON(http.StatusOK, gin.H{"products": true})
+	c.JSON(http.StatusOK, gin.H{"products": true})
 }

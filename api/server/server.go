@@ -1,8 +1,8 @@
 package server
 
 import (
+	"crudgin/api/handlers"
 	"crudgin/api/handlers/middleware"
-	"crudgin/entities/product"
 	"crudgin/entities/user"
 	"net/http"
 
@@ -12,24 +12,24 @@ import (
 func InitRouter() {
 	route := gin.Default()
 
-	route.GET("/", func(context *gin.Context) {
-		context.JSON(http.StatusOK, gin.H{"message": "Hi"})
+	route.GET("/", func(c *gin.Context) {
+		c.AbortWithStatusJSON(http.StatusOK, gin.H{"message": "Hi"})
 	})
 	userRoute := route.Group("/user")
 	userRoute.Use(middleware.AuthMiddleware())
 
-	route.GET("/products", product.GetAllProducts)
-	route.POST("/products", product.CreateProducts)
-	route.GET("/products/:id", product.GetProducts)
-	route.PATCH("/products/:id", product.UpdateProduct)
-	route.DELETE("/products/:id", product.DeleteTrack)
+	route.GET("/products", handlers.GetAllProduct)
+	route.POST("/products", handlers.CreateProduct)
+	route.GET("/products/:id", handlers.GetProduct)
+	route.PATCH("/products/:id", handlers.UpdateProduct)
+	route.DELETE("/products/:id", handlers.DeleteProduct)
 
-	route.POST("/createuser", user.CreateUserDB)
+	route.POST("/createuser", handlers.CreateUser)
 	route.POST("/login", user.Login)
-	userRoute.GET("/users/:id", user.GetAllUsers)
-	userRoute.GET("/user/:id", user.GetUsers)
-	userRoute.PUT("/user/:id", user.UpdateUser)
-	userRoute.DELETE("/user/:id", user.DeleteUser)
+	userRoute.GET("/users/:id", handlers.GetAllUser)
+	userRoute.GET("/user/:id", handlers.GetUser)
+	userRoute.PUT("/user/:id", handlers.UpdateUser)
+	userRoute.DELETE("/user/:id", handlers.DeleteUSer)
 
 	route.Run()
 

@@ -1,76 +1,72 @@
 package product
 
 import (
-	"crudgin/pkg/db"
+	"errors"
 	"log"
-	"net/http"
-
-	"github.com/gin-gonic/gin"
 )
 
 var Err error
 
-func GetAllProducts(c *gin.Context) {
-	var products []Products
-	var err error
-	db.DB.Find(&products)
-	if err != nil {
-		log.Println("Не удалось получить список продуктов")
+func GetAllProductService(input []Products) error {
+	if input == nil {
+		err := errors.New("неверный input: поле не может быть пустым")
+		log.Println(err)
+		return err
 	}
-
-	c.JSON(http.StatusOK, gin.H{"products": products})
+	err := GetAllProductDB(input)
+	if err != nil {
+		log.Println("Ошибка при получениии продукта из базе данных:", err)
+		return err
+	}
+	return err
 }
 
-func GetProducts(c *gin.Context) {
-
-	var product Products
-	var err error
-	if err := db.DB.Where("id=?", c.Param("id")).First(&product).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Запись не существует"})
-		return
+func GetProductService(input Products) error {
+	if input.Name == "" {
+		err := errors.New("неверный input: поле Login не может быть пустым")
+		log.Println(err)
+		return err
 	}
+	err := GetProductDB(input)
 	if err != nil {
-		log.Println("Не удалось получить продукт")
+		log.Println("Ошибка при создании пользователя в базе данных:", err)
+		return err
 	}
-	c.JSON(http.StatusOK, gin.H{"products": product})
+	return err
 }
 
-func UpdateProduct(c *gin.Context) {
-	var product Products
-	var err error
-	if err := db.DB.Where("id=?", c.Param("id")).First(&product).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Запись не существует"})
-		return
+func CreateProductService(input Products) error {
+	if input.Name == "" {
+		err := errors.New("неверный input: поле Login не может быть пустым")
+		log.Println(err)
+		return err
 	}
+	err := CreateProductDB(input)
 	if err != nil {
-		log.Println("такого продукта нет")
+		log.Println("Ошибка при создании пользователя в базе данных:", err)
+		return err
 	}
-	var input Products
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
-	}
+	return err
+}
+func UpdateProductService(input Products) error {
+	err := UpdateProductDB(input)
 	if err != nil {
-		log.Println("Не удалось обновить продукт")
+		log.Println("Не удалось обновить пользователя")
+		return err
 	}
-
-	db.DB.Model(&product).Update(input)
-
-	c.JSON(http.StatusOK, gin.H{"products": product})
+	return nil
 }
 
-func DeleteTrack(c *gin.Context) {
-	var product Products
-	var err error
-	if err := db.DB.Where("id = ?", c.Param("id")).First(&product).Error; err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": "Запись не существует"})
-		return
+func DeleteProductService(input Products) error {
+	if input.ID == 0 {
+		err := errors.New("неверный input: поле ID не может быть пустым")
+		log.Println(err)
+		return err
 	}
+	err := DeleteProductDB(input)
 	if err != nil {
-		log.Println("Не удалось удалить продукт")
+		log.Println("не удалось удалить product")
+		return err
 	}
-
-	db.DB.Delete(&product)
-
-	c.JSON(http.StatusOK, gin.H{"products": true})
+	return err
 }

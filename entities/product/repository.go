@@ -3,24 +3,51 @@ package product
 import (
 	"crudgin/pkg/db"
 	"log"
-	"net/http"
-
-	"github.com/gin-gonic/gin"
 )
 
-func CreateProducts(c *gin.Context) {
-	var input Products
-	var err error
-	if err := c.ShouldBindJSON(&input); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
-		return
+func CreateProductDB(input Products) error {
+	if err := db.DB.Create(&input).Error; err != nil {
+		log.Println("Не удалось создать продукт:", err)
+		return err
 	}
-	if err != nil {
-		log.Println("Не удалось создать продукт")
+	return nil
+}
+
+func DeleteProductDB(input Products) error {
+	if err := db.DB.Where("id=?").First(&input).Error; err != nil {
+		log.Println("такого producta нет")
+	}
+	if err := db.DB.Delete(&input).Error; err != nil {
+		log.Println("Не удалось удалить продукт", err)
+		return err
+	}
+	return nil
+}
+
+func UpdateProductDB(input Products) error {
+	var Product Products
+	if err := db.DB.First(&Product, input.ID).Error; err != nil {
+		log.Println("Продукт не найден:", err)
+		return err
 	}
 
-	product := Products{Name: input.Name, Price: input.Price}
-	db.DB.Create(&product)
+	if err := db.DB.Model(&Product).Updates(input).Error; err != nil {
+		log.Println("Не удалось обновить продукт:", err)
+		return err
+	}
+	return nil
+}
 
-	c.JSON(http.StatusOK, gin.H{"products": product})
+func GetAllProductDB(input []Products) error {
+	if err := db.DB.Find(&input).Error; err != nil {
+		log.Println("Не удалось получить список productov")
+	}
+	return nil
+}
+
+func GetProductDB(input Products) error {
+	if err := db.DB.Where("login = ?").First(&input).Error; err != nil {
+		log.Println("такого producta нет")
+	}
+	return nil
 }

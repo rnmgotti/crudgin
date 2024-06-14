@@ -1,8 +1,6 @@
 package db
 
 import (
-	"log"
-
 	"github.com/jinzhu/gorm"
 	_ "github.com/jinzhu/gorm/dialects/postgres"
 )
@@ -15,8 +13,9 @@ func ConnectDB() {
 	if err != nil {
 		panic("Не удалось подключиться к базе данных")
 	}
+}
 
-	sqlDB := DB
+/*sqlDB := DB
     if err != nil {
         log.Fatalf("Ошибка получения объекта sql.DB: %v", err)
     }
@@ -27,4 +26,4 @@ func ConnectDB() {
             log.Fatalf("Ошибка закрытия соединения с базой данных: %v", err)
         }
     }()
-}
+}*/

@@ -3,6 +3,7 @@ package user
 import (
 	"crudgin/pkg/db"
 	"crudgin/pkg/utils/jwttoken"
+	"errors"
 	"log"
 	"net/http"
 
@@ -16,94 +17,107 @@ func Login(c *gin.Context) {
 		Password string `json:"password" binding:"required"`
 	}
 	if err := c.ShouldBindJSON(&loginJwt); err != nil {
-		c.JSON(http.StatusBadRequest, gin.H{"error": err.Error()})
+		c.AbortWithStatusJSON(http.StatusBadRequest, gin.H{"error": err.Error()})
 		return
 	}
 
 	var user Users
+	var err error
 	result := db.DB.Where("login = ?", loginJwt.Login).First(&user)
 	if result.Error != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Error BD"})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Error BD"})
 		return
 	}
 
-	if result.RowsAffected == 0 {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Неверные учетные данные для входа"})
+	if err != nil {
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Неверные учетные данные для входа"})
 		return
 	}
 
 	// Проверка пароля
 	if loginJwt.Password != user.Password {
-		c.JSON(http.StatusUnauthorized, gin.H{"error": "Неверные учетные данные для входа"})
+		c.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Неверные учетные данные для входа"})
 		return
 	}
 
 	// Генерация JWT токена
 	tokenString, err := jwttoken.GenerateToken(user.Login)
 	if err != nil {
-		c.JSON(http.StatusInternalServerError, gin.H{"error": "Не удалось сгенерировать токен"})
+		c.AbortWithStatusJSON(http.StatusInternalServerError, gin.H{"error": "Не удалось сгенерировать токен"})
 		return
 	}
 
-	c.JSON(http.StatusOK, gin.H{
+	c.AbortWithStatusJSON(http.StatusOK, gin.H{
 		"user":  user,
 		"token": tokenString,
 	})
 }
 
 // список пользователей
-func GetAllUsers(context *gin.Context) {
-	var users []Users
-	var err error
-	db.DB.Find(&users)
-	if err != nil {
-		log.Println("Не удалось получить список пользователей")
+func GetAllUsersService(input []Users) error {
+	if input == nil {
+		err := errors.New("неверный input: поле не может быть пустым")
+		log.Println(err)
+		return err
 	}
-
-	context.JSON(http.StatusOK, gin.H{"users": users})
+	err := GetAllUserDB(input)
+	if err != nil {
+		log.Println("Ошибка при создании пользователя в базе данных:", err)
+		return err
+	}
+	return err
 }
 
 // получение одного пользователя
-func GetUsers(context *gin.Context) {
-	var user Users
-	var err error
-	if err = db.DB.Where("id=?", context.Param("id")).First(&user).Error; err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": "пользователя не существует"})
-		return
+func GetUserService(input Users) error {
+	if input.Login == "" {
+		err := errors.New("неверный input: поле Login не может быть пустым")
+		log.Println(err)
+		return err
 	}
+	err := GetUserDB(input)
 	if err != nil {
-		log.Println("Не удалось получить пользователя")
+		log.Println("Ошибка при создании пользователя в базе данных:", err)
+		return err
 	}
-	context.JSON(http.StatusOK, gin.H{"products": user})
+	return err
+}
+
+func CreateUserService(input Users) error {
+	if input.Login == "" {
+		err := errors.New("неверный input: поле Login не может быть пустым")
+		log.Println(err)
+		return err
+	}
+	err := CreateUserDB(input)
+	if err != nil {
+		log.Println("Ошибка при создании пользователя в базе данных:", err)
+		return err
+	}
+	return err
 }
 
 // обновление пользователя
-func UpdateUser(context *gin.Context) {
-	var user Users
-	var err error
-	if err = db.DB.Where("id=?", context.Param("id")).First(&user).Error; err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": "пользователя не существует"})
-		return
-	}
+func UpdateUserService(input Users) error {
+	err := UpdateUserDB(input)
 	if err != nil {
 		log.Println("Не удалось обновить пользователя")
+		return err
 	}
-	context.JSON(http.StatusOK, gin.H{"user": user})
+	return nil
 }
 
 // удаление пользователя
-func DeleteUser(context *gin.Context) {
-	var user Users
-	var err error
-	if err = db.DB.Where("id=?", context.Param("id")).First(&user).Error; err != nil {
-		context.JSON(http.StatusBadRequest, gin.H{"error": "пользователя не существует"})
-		return
+func DeleteUserService(input Users) error {
+	if input.ID == 0 {
+		err := errors.New("неверный input: поле ID не может быть пустым")
+		log.Println(err)
+		return err
 	}
+	err := DeleteUserDB(input)
 	if err != nil {
-		log.Println("Не удалось получить пользователя")
+		log.Println("не удалось удалить пользователя")
+		return err
 	}
-
-	db.DB.Delete(&user)
-
-	context.JSON(http.StatusOK, gin.H{"user": true})
+	return err
 }
